@@ -24,7 +24,9 @@
 #import "ACEAutocompleteBar.h"
 
 #define kDefaultHeight      44.0f
-#define kDefaultMargin      5.0f
+#define kHorizontalPadding  10.0f
+#define kHorizontalInset    5.0f
+#define kVerticalInset      3.0f
 
 #define kTagRotatedView     101
 #define kTagLabelView       102
@@ -71,16 +73,12 @@ NSUInteger DeviceSystemMajorVersion()
                                                                             (self.bounds.size.height - self.bounds.size.width) / 2,
                                                                             self.bounds.size.height, self.bounds.size.width)];
         
-        // init the bar the hidden state
-        self.hidden = YES;
-        
         _suggestionListView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         _suggestionListView.transform = CGAffineTransformMakeRotation(-M_PI / 2);
         
         _suggestionListView.showsVerticalScrollIndicator = NO;
         _suggestionListView.showsHorizontalScrollIndicator = NO;
         _suggestionListView.backgroundColor = [UIColor clearColor];
-        _suggestionListView.separatorStyle = UITableViewCellSeparatorStyleNone;
         
         _suggestionListView.dataSource = self;
         _suggestionListView.delegate = self;
@@ -96,22 +94,14 @@ NSUInteger DeviceSystemMajorVersion()
 
 - (void)show:(BOOL)show withAnimation:(BOOL)animated
 {
-    if (show && self.hidden) {
-        // this is to remove the frst animation when the virtual keyboard will appear
-        // use the hidden property to hide the bar wihout animations
-        self.hidden = NO;
-    }
-    
     if (animated) {
         [UIView animateWithDuration:0.3
                          animations:^{
                              [self show:show withAnimation:NO];
-							 self.hidden = !show;
                          } completion:nil];
         
     } else {
         self.alpha = (show) ? 1.0f : 0.0f;
-		self.hidden = !show;
     }
 }
 
@@ -134,7 +124,7 @@ NSUInteger DeviceSystemMajorVersion()
     return _textColor;
 }
 
-#pragma makr - Helpers
+#pragma mark - Helpers
 
 - (NSString *)stringForObjectAtIndex:(NSUInteger)index
 {
@@ -169,11 +159,11 @@ NSUInteger DeviceSystemMajorVersion()
     if ([self.delegate respondsToSelector:_cmd]) {
         [self.delegate textFieldDidBeginEditing:textField];
     }
+    [self refreshSuggestions];
 }
 
 - (BOOL)textFieldShouldEndEditing:(UITextField *)textField
 {
-	[self show: NO withAnimation: NO];
     if ([self.delegate respondsToSelector:_cmd]) {
         return [self.delegate textFieldShouldEndEditing:textField];
     }
@@ -187,24 +177,37 @@ NSUInteger DeviceSystemMajorVersion()
     }
 }
 
+- (void) refreshSuggestions
+{
+    [self refreshSuggestionsWithQuery:self.textField.text];
+}
+
+- (void) refreshSuggestionsWithQuery:(NSString*)query
+{
+    [self.dataSource inputView:self itemsFor:query result:^(NSArray *items) {
+        self.suggestionList = items;
+        [self.suggestionListView reloadData];
+    }];
+}
+
 - (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
 {
+    if ([self.delegate respondsToSelector:_cmd]) {
+        BOOL allowChanges = [self.delegate textField:textField shouldChangeCharactersInRange:range replacementString:string];
+        if (!allowChanges)
+        {
+            return FALSE;
+        }
+    }
+
     NSString * query = [textField.text stringByReplacingCharactersInRange:range withString:string];
     if (query.length >= [self.dataSource minimumCharactersToTrigger:self]) {
-        [self.dataSource inputView:self itemsFor:query result:^(NSArray *items) {
-            self.suggestionList = items;
-            [self.suggestionListView reloadData];
-        }];
-        
+        [self refreshSuggestionsWithQuery:query];
     } else {
         self.suggestionList = nil;
         [self.suggestionListView reloadData];
     }
-    
-    if ([self.delegate respondsToSelector:_cmd]) {
-        return [self.delegate textField:textField shouldChangeCharactersInRange:range replacementString:string];
-    }
-    
+
     return YES;
 }
 
@@ -253,18 +256,15 @@ NSUInteger DeviceSystemMajorVersion()
         }
         
         // add some margins
-        return width + (kDefaultMargin * 2) + 1.0f;
+        return width + (kHorizontalPadding * 2) + 1.0f;
     }
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     [self.delegate textField:self.textField didSelectObject:[self.suggestionList objectAtIndex:indexPath.row] inInputView:self];
-    
-    // hide the bar
-    [self show:NO withAnimation:YES];
-
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    [self refreshSuggestions];
 }
 
 
@@ -294,7 +294,7 @@ NSUInteger DeviceSystemMajorVersion()
         
         
 		
-        CGRect frame = CGRectInset(CGRectMake(0.0f, 0.0f, cell.bounds.size.height, cell.bounds.size.width), kDefaultMargin, kDefaultMargin);
+        CGRect frame = CGRectInset(CGRectMake(0.0f, 0.0f, cell.bounds.size.height, cell.bounds.size.width), kHorizontalInset, kVerticalInset);
 		rotatedView = [[UIView alloc] initWithFrame:frame];
         rotatedView.tag = kTagRotatedView;
 		rotatedView.center = cell.contentView.center;
@@ -332,6 +332,7 @@ NSUInteger DeviceSystemMajorVersion()
         textLabel.font = self.font;
         textLabel.textColor = self.textColor;
         textLabel.text = [self stringForObjectAtIndex:indexPath.row];
+        textLabel.textAlignment = NSTextAlignmentCenter;
     }
     
     return cell;
