@@ -274,7 +274,8 @@ NSUInteger DeviceSystemMajorVersion()
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
     NSInteger suggestions = self.suggestionList.count;
-    [self show:suggestions > 0 withAnimation:YES];
+    bool shouldShow = (self.alwaysShow || suggestions > 0);
+    [self show:shouldShow withAnimation:YES];
     return suggestions;
 }
 

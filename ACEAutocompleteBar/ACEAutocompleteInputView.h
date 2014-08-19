@@ -34,6 +34,7 @@
 // customization (ignored when the optional methods of the data source are implemeted)
 @property (nonatomic, strong) UIFont * font;
 @property (nonatomic, strong) UIColor * textColor;
+@property (nonatomic, assign) bool alwaysShow;
 
 - (id)initWithHeight:(CGFloat)height;
 
