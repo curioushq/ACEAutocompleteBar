@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = 'ACEAutocompleteBar'
-  s.version      = '0.2.0'
+  s.version      = '0.3.0'
   s.license      = { :type => 'MIT', :file => 'LICENSE' }
   s.summary      = 'Simple UITextFlied category to display text suggestions in real-time on the top of the virtual keyboard.'
   s.homepage     = 'https://github.com/acerbetti/ACEAutocompleteBar'
