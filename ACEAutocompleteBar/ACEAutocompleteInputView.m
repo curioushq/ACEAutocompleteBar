@@ -196,7 +196,7 @@ NSUInteger DeviceSystemMajorVersion()
         BOOL allowChanges = [self.delegate textField:textField shouldChangeCharactersInRange:range replacementString:string];
         if (!allowChanges)
         {
-            [self refreshSuggestions];
+            // we expect that the delegate calls refreshSuggestions itself
             return NO;
         }
     }

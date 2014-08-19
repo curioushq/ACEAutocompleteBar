@@ -40,4 +40,6 @@
 
 - (void)show:(BOOL)show withAnimation:(BOOL)animated;
 
+- (void) refreshSuggestions;
+
 @end
